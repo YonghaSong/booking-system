@@ -180,3 +180,7 @@ interface Booking {
 ---
 
 🐛 **벌레없음과 함께 깨끗한 환경을 만들어보세요!** 🏠
+
+## 🚀 GitHub Actions 자동 배포 테스트
+
+모든 GitHub Secrets 설정 완료 - 자동 배포 테스트 중!
