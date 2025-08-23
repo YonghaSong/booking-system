@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 예약(bookings) 컬렉션 규칙
+    match /bookings/{bookingId} {
+      // 모든 사용자가 예약을 생성할 수 있음 (익명 포함)
+      allow create: if true;
+      
+      // 모든 사용자가 예약을 읽을 수 있음 (예약번호로 조회)
+      allow read: if true;
+      
+      // 클라이언트 사이드 관리자 시스템을 위해 업데이트 허용
+      // 실제 운영 환경에서는 서버 사이드 인증이나 Firebase Auth 사용 권장
+      allow update: if true;
+      
+      // 삭제는 허용하지 않음
+      allow delete: if false;
+    }
+    
+    // 기본적으로 다른 모든 문서는 접근 거부
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
