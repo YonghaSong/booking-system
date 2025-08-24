@@ -72,3 +72,39 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   completed: '완료',
   cancelled: '취소됨'
 };
+
+// v2 캘린더 가용성 관련 타입들
+export type SlotKey = TimeSlot; // "morning" | "afternoon" | "evening"
+
+export type SlotStatus = "available" | "full" | "closed";
+
+export type DayAvailability = {
+  date: string; // "2025-08-27"
+  slots: Record<SlotKey, SlotStatus>;
+  isBookable: boolean;
+};
+
+export type MonthAvailability = {
+  month: string; // "2025-08"
+  days: DayAvailability[];
+};
+
+// v2 새로운 컴포넌트 Props
+export type BookingCalendarProps = {
+  initialMonth?: string;
+  selectedDate?: string;
+  onDateSelect?: (date: string | undefined) => void;
+  fetchMonthAvailability: (month: string) => Promise<MonthAvailability>;
+  locale?: "ko" | "en";
+};
+
+export type TimeSlotPanelProps = {
+  selectedDate?: string;
+  fetchDaySlots: (date: string) => Promise<Record<SlotKey, SlotStatus>>;
+  value?: { date?: string; slot?: SlotKey };
+  onChange?: (next: { date: string; slot: SlotKey }) => void;
+  openInMobile?: boolean;
+  onCloseMobile?: () => void;
+  alwaysVisible?: boolean;
+  locale?: "ko" | "en";
+};

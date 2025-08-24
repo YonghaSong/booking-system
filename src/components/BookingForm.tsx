@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import type { BookingInput, PestType, TimeSlot } from '../types';
 import { PEST_TYPE_LABELS, TIME_SLOT_LABELS } from '../types';
-import { createBooking } from '../services/bookingService';
+import { createBooking, fetchMonthAvailability, fetchDaySlots } from '../services/bookingService';
+import { BookingCalendar } from './BookingCalendar';
+import { TimeSlotPanel } from './TimeSlotPanel';
+import { ConfirmBar } from './ConfirmBar';
 
 interface BookingFormProps {
   onSuccess?: (bookingNumber: string) => void;
@@ -23,9 +26,11 @@ export function BookingForm({ onSuccess, onError }: BookingFormProps) {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof BookingInput, string>>>({});
+  const [useCalendar, setUseCalendar] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string | undefined>(formData.preferredDate || undefined);
 
   // 입력값 변경 핸들러
-  const handleInputChange = (field: keyof BookingInput, value: any) => {
+  const handleInputChange = (field: keyof BookingInput, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // 에러 메시지 클리어
     if (errors[field]) {
@@ -72,6 +77,33 @@ export function BookingForm({ onSuccess, onError }: BookingFormProps) {
     return Object.keys(newErrors).length === 0;
   };
 
+
+  // 캘린더에서 날짜 선택 핸들러
+  const handleDateSelect = (date: string | undefined) => {
+    setSelectedDate(date);
+    if (date) {
+      setFormData(prev => ({ ...prev, preferredDate: date }));
+      // 에러 메시지 클리어
+      if (errors.preferredDate) {
+        setErrors(prev => ({ ...prev, preferredDate: '' }));
+      }
+    }
+  };
+
+  // 시간대 선택 핸들러
+  const handleTimeSlotChange = (selection: { date: string; slot: TimeSlot }) => {
+    setFormData(prev => ({
+      ...prev,
+      preferredDate: selection.date,
+      timeSlot: selection.slot
+    }));
+    
+    // 에러 메시지 클리어
+    if (errors.preferredDate) {
+      setErrors(prev => ({ ...prev, preferredDate: '' }));
+    }
+  };
+
   // 폼 제출 핸들러
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,7 +144,7 @@ export function BookingForm({ onSuccess, onError }: BookingFormProps) {
         해충방제 서비스 예약
       </h2>
       
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form id="booking-form" onSubmit={handleSubmit} className="space-y-4">
         {/* 고객명 */}
         <div>
           <label htmlFor="customerName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -227,47 +259,127 @@ export function BookingForm({ onSuccess, onError }: BookingFormProps) {
           />
         </div>
 
-        {/* 희망 날짜 */}
-        <div>
-          <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700 mb-1">
-            희망 서비스 날짜 *
-          </label>
-          <input
-            type="date"
-            id="preferredDate"
-            value={formData.preferredDate}
-            onChange={(e) => handleInputChange('preferredDate', e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
-            className={`w-full px-3 py-2 sm:py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base ${
-              errors.preferredDate ? 'border-red-500' : 'border-gray-300'
-            }`}
-          />
-          {errors.preferredDate && (
-            <p className="mt-1 text-sm text-red-600">{errors.preferredDate}</p>
+        {/* v2 날짜 및 시간 선택 */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <label className="block text-sm font-medium text-gray-700">
+              희망 서비스 날짜 및 시간대 *
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setUseCalendar(!useCalendar)}
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                {useCalendar ? '일반 선택으로 변경' : '캘린더로 선택'}
+              </button>
+            </div>
+          </div>
+
+          {useCalendar ? (
+            /* 모바일 컴팩트 + 데스크톱 2컬럼 레이아웃 */
+            <div>
+              {/* 세로 레이아웃 (모바일/데스크톱 공통) */}
+              <section className="px-3 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] space-y-3 md:px-0 md:pt-0 md:pb-0 md:space-y-6">
+                {/* 캘린더 */}
+                <div>
+                  <BookingCalendar
+                    selectedDate={selectedDate}
+                    onDateSelect={handleDateSelect}
+                    fetchMonthAvailability={fetchMonthAvailability}
+                    locale="ko"
+                  />
+                </div>
+
+                {/* 시간대 패널 */}
+                <div>
+                  <div className="bg-white rounded-lg shadow-lg p-3 border-2 border-blue-100 md:p-6">
+                    <TimeSlotPanel
+                      selectedDate={selectedDate}
+                      fetchDaySlots={fetchDaySlots}
+                      value={{
+                        date: formData.preferredDate,
+                        slot: formData.timeSlot
+                      }}
+                      onChange={handleTimeSlotChange}
+                      locale="ko"
+                      alwaysVisible={true}
+                    />
+                  </div>
+                </div>
+              </section>
+
+              {/* 모바일 CTA 바 - 날짜와 시간대 둘 다 선택된 경우만 표시 */}
+              {formData.preferredDate && formData.timeSlot && (
+                <ConfirmBar
+                  onConfirm={() => {
+                    // 확인 버튼 클릭 시 폼의 다음 섹션으로 스크롤하거나 액션 실행
+                    const formElement = document.querySelector('#booking-form');
+                    if (formElement) {
+                      const nextElement = formElement.querySelector('[data-scroll-target="next"]');
+                      if (nextElement) {
+                        nextElement.scrollIntoView({ behavior: 'smooth' });
+                      }
+                    }
+                  }}
+                  text="확인"
+                  locale="ko"
+                />
+              )}
+            </div>
+          ) : (
+            /* 기존 날짜/시간 선택 */
+            <>
+              <div>
+                <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700 mb-1">
+                  희망 서비스 날짜
+                </label>
+                <input
+                  type="date"
+                  id="preferredDate"
+                  value={formData.preferredDate}
+                  onChange={(e) => handleInputChange('preferredDate', e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className={`w-full px-3 py-2 sm:py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base ${
+                    errors.preferredDate ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.preferredDate && (
+                  <p className="mt-1 text-sm text-red-600">{errors.preferredDate}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="timeSlot" className="block text-sm font-medium text-gray-700 mb-1">
+                  희망 시간대
+                </label>
+                <select
+                  id="timeSlot"
+                  value={formData.timeSlot}
+                  onChange={(e) => handleInputChange('timeSlot', e.target.value as TimeSlot)}
+                  className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                >
+                  {Object.entries(TIME_SLOT_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 선택된 일정 요약 */}
+              {formData.preferredDate && formData.timeSlot && (
+                <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md">
+                  <span className="font-medium">선택된 일정:</span>{' '}
+                  {formData.preferredDate} ({TIME_SLOT_LABELS[formData.timeSlot as TimeSlot]})
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        {/* 시간대 */}
-        <div>
-          <label htmlFor="timeSlot" className="block text-sm font-medium text-gray-700 mb-1">
-            희망 시간대 *
-          </label>
-          <select
-            id="timeSlot"
-            value={formData.timeSlot}
-            onChange={(e) => handleInputChange('timeSlot', e.target.value as TimeSlot)}
-            className="w-full px-3 py-2 sm:py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-          >
-            {Object.entries(TIME_SLOT_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </div>
-
         {/* 긴급 서비스 */}
-        <div className="flex items-center">
+        <div className="flex items-center" data-scroll-target="next">
           <input
             type="checkbox"
             id="urgentService"
