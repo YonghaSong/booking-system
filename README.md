@@ -29,6 +29,26 @@
 - **Routing**: React Router v7
 - **CI/CD**: GitHub Actions
 
+## 📁 프로젝트 구조
+
+```
+booking-system/
+├── docs/                    # 📚 문서
+│   ├── setup/              # 설정 가이드
+│   │   └── GITHUB_SECRETS_SETUP.md
+│   └── specs/              # 기술 명세서
+│       ├── booking-calendar-spec.md
+│       ├── booking-calendar-spec-v2.md
+│       └── booking-calendar-spec-v2-mobile-compact.md
+├── src/                    # 소스 코드
+│   ├── components/         # React 컴포넌트
+│   ├── pages/             # 페이지 컴포넌트
+│   ├── services/          # Firebase 서비스
+│   ├── types/             # TypeScript 타입
+│   └── utils/             # 유틸리티 함수
+└── CLAUDE.md              # Claude Code 가이드
+```
+
 ## 🔧 개발 환경 설정
 
 ### 1. 프로젝트 클론

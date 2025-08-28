@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookingForm } from '../components/BookingForm';
+import { NewBookingForm } from '../components/NewBookingForm';
 import { BookingSuccess } from '../components/BookingSuccess';
 import { Alert } from '../components/Alert';
 
@@ -49,7 +49,7 @@ export function HomePage() {
           onNewBooking={handleNewBooking}
         />
       ) : (
-        <BookingForm
+        <NewBookingForm
           onSuccess={handleBookingSuccess}
           onError={handleBookingError}
         />

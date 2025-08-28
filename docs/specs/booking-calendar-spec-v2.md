@@ -1,4 +1,3 @@
-
 # 📑 booking-calendar-spec.md — v2 (Calendar/Time 영역 분리)
 
 ## Overview
@@ -180,7 +179,7 @@ fetchDaySlots(date: string): Promise<{ morning: SlotStatus; afternoon: SlotStatu
 ---
 
 ## Edge Cases & Errors
-- `selectedDate`가 비가용: 패널에 “해당 날짜는 예약 불가” 메시지 + 다른 날짜 선택 유도
+- `selectedDate`가 비가용: 패널에 "해당 날짜는 예약 불가" 메시지 + 다른 날짜 선택 유도
 - API 실패: 패널 상단 경고 배너 + 재시도 버튼
 - 월 변경으로 `selectedDate`가 범위 이탈: `selectedDate` 초기화
 
